@@ -37,10 +37,16 @@
 
 #define TIMEOUT 1
 
+#define TRUE 1
+#define FALSE 0
+#define DEBUG FALSE
+
 static unsigned int loops = 100;
 static int use_pipes = 1; // Use Pipe mode
 //static int pollfd = 0; // 0: not used, 1: used
 //static unsigned int *pollfd[512];
+static int fd_count = 0;
+
 
 /* Data structure descripbing a polling request. */
 
@@ -49,6 +55,8 @@ struct pollfd{
   short int events;    /* Types of events poller cares about. */
   short int revents;   /* Types of events that actually occurred. */
 }pollfd[512];
+
+
 
 static void barf(const char *msg)
 {
@@ -62,6 +70,7 @@ static void fdpair(int fds[2])
     // TODO: Implement myPipe
     //    pipe(fds[0], fds[1]);
     if (pipe(fds) == 0)
+      fd_count += 2;
       return;
   } else {
     // This mode would not run correctly in xv6
@@ -98,9 +107,10 @@ static void checkEvents(int id, int event, int caller, char *msg){
 static void ready(int ready_out, int wakefd, int id, int caller)
 {
   char dummy;
+  dummy = 'a';
   // TODO: Implement myPoll function
   pollfd[id].fd = wakefd;
-  pollfd[id].events = POLLIN;
+  if(caller == RECEIVER) pollfd[id].events = POLLIN;
 
   /* Tell them we're ready. */
   if (write(ready_out, &dummy, 1) != 1)
@@ -111,13 +121,13 @@ static void ready(int ready_out, int wakefd, int id, int caller)
   //if (poll(&pollfd, 1, -1) != 1)
   //        barf("poll");
   if(caller == SENDER){
-    //checkEvents(id, pollfd[id].events, caller, "waiting");
-    //while(pollfd[id].events == POLLIN);
-    checkEvents(id, pollfd[id].events, caller, "ready");
+    if(DEBUG) checkEvents(id, pollfd[id].events, caller, "waiting");
+    while(pollfd[id].events == POLLIN);
+    if(DEBUG) checkEvents(id, pollfd[id].events, caller, "ready");
   }else if(caller == RECEIVER){
     pollfd[id].events = FREE;
     //while(getticks() < TIMEOUT);
-    checkEvents(id, pollfd[id].events, caller, "ready");
+    if(DEBUG) checkEvents(id, pollfd[id].events, caller, "ready");
   }else{
     barf("Failed being ready.");
   }
@@ -133,6 +143,12 @@ static void sender(unsigned int num_fds,
 		   int id)
 {
   char data[DATASIZE];
+  int k;
+  for(k=0; k<DATASIZE-1 ; k++){
+    data[k] = 'b';
+  }
+  data[k] = '\0';
+  
   unsigned int i, j;
 
   //TODO: Fix Me?
@@ -145,13 +161,13 @@ static void sender(unsigned int num_fds,
 
     again:
       ret = write(out_fd[j], data + done, sizeof(data)-done);
-      printf(STDOUT, "send[%d]: ret = %d. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
+      if(DEBUG) printf(STDOUT, "send[%d]: ret = %d. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
       if (ret < 0)
 	barf("SENDER: write");
       done += ret;
       if (done < sizeof(data))
 	goto again;
-      printf(STDOUT, "send[%d]'s task has done. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
+      if(DEBUG) printf(STDOUT, "send[%d]'s task has done. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
     }
   }
 }
@@ -176,15 +192,19 @@ static void receiver(unsigned int num_packets,
 
   again:
     ret = read(in_fd, data + done, DATASIZE - done);
-    printf(STDOUT, "recv[%d]: ret = %d. (%d/%d)\n", id, ret, i, num_packets);
+    if(DEBUG) printf(STDOUT, "recv[%d]: ret = %d. (%d/%d)\n", id, ret, i, num_packets);
     if (ret < 0)
       barf("SERVER: read");
     done += ret;
     if (done < DATASIZE){
-      timeout++;
-      if(timeout < TIMEOUT)goto again;
+      //timeout++;
+      goto again;
     }
-    printf(STDOUT, "recv[%d]'s task has done. (%d/%d)\n", id, i, num_packets);
+    //if(timeout < TIMEOUT){
+    //printf(STDOUT, "recv[%d]'s task was timed out. (%d/%d)\n", id, i, num_packets);
+    //}else{
+    if(DEBUG) printf(STDOUT, "recv[%d]'s task has done. (%d/%d)\n", id, i, num_packets);
+    //}
     timeout = 0;
   }
 }
@@ -208,6 +228,7 @@ static unsigned int group(unsigned int num_fds,
     case -1: barf("fork()");
     case 0:
       close(fds[1]);
+      fd_count++;
       receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
       exit();
     }
@@ -221,6 +242,7 @@ static unsigned int group(unsigned int num_fds,
     switch (fork()) {
     case -1: barf("fork()");
     case 0:
+      fd_count += 2;
       sender(num_fds, out_fds, ready_out, wakefd, i);
       exit();
     }
@@ -230,7 +252,7 @@ static unsigned int group(unsigned int num_fds,
   for (i = 0; i < num_fds; i++)
     close(out_fds[i]);
 
-  /* Return number of children to reap */
+  /* Reap number of children to reap */
   return num_fds * 2;
 }
 
@@ -239,7 +261,8 @@ int main(int argc, char *argv[])
   unsigned int i, num_groups, total_children;
   //struct timeval start, stop, diff;
   int start=0, stop=0, diff=0;
-  unsigned int num_fds = 20;
+  // NOTE: More than 8 causes error due to num of fds.
+  unsigned int num_fds = 8;  // Original this is 20
   int readyfds[2], wakefds[2];
   char dummy;
 
@@ -257,7 +280,8 @@ int main(int argc, char *argv[])
   //if (argc != 2 || (num_groups = atoi(argv[1])) == 0)
   //        barf("Usage: hackbench [-pipe] <num groups>\n");
 
-  num_groups = 1; // TODO: This may seriously be considered.
+  // NOTE: More than 3 causes error due to num of processes.
+  num_groups = 3; // TODO: This may seriously be considered.
 
   fdpair(readyfds);
   fdpair(wakefds);
@@ -283,9 +307,9 @@ int main(int argc, char *argv[])
   /* Reap them all */
   //TODO: Fix different specifications between xv6 and Linux
   for (i = 0; i < total_children; i++) {
-    int status;
+    //int status;
     //wait(&status); // TODO: Too Many Arguments???
-    wait();
+    wait(); // Waiting for that all child's tasks finish.
     // TODO: What's WIFEXITED ???
     //if (!WIFEXITED(status))
     //  exit();
@@ -297,6 +321,7 @@ int main(int argc, char *argv[])
 
   /* Print time... */
   printf(STDOUT, "Time: %d [ticks]\n", diff);
+  if(DEBUG) printf(STDOUT, "fd_count = %d\n", fd_count);
   exit();
 }
 
