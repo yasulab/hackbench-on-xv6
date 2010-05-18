@@ -41,6 +41,9 @@
 #define FALSE 0
 #define DEBUG FALSE
 
+#define NUM_FDS 8
+#define NUM_GROUPS 2
+
 static unsigned int loops = 100;
 static int use_pipes = 1; // Use Pipe mode
 //static int pollfd = 0; // 0: not used, 1: used
@@ -262,7 +265,7 @@ int main(int argc, char *argv[])
   //struct timeval start, stop, diff;
   int start=0, stop=0, diff=0;
   // NOTE: More than 8 causes error due to num of fds.
-  unsigned int num_fds = 8;  // Original this is 20
+  unsigned int num_fds = NUM_FDS;  // Original this is 20
   int readyfds[2], wakefds[2];
   char dummy;
 
@@ -281,7 +284,7 @@ int main(int argc, char *argv[])
   //        barf("Usage: hackbench [-pipe] <num groups>\n");
 
   // NOTE: More than 3 causes error due to num of processes.
-  num_groups = 3; // TODO: This may seriously be considered.
+  num_groups = NUM_GROUPS; // TODO: This may seriously be considered.
 
   fdpair(readyfds);
   fdpair(wakefds);

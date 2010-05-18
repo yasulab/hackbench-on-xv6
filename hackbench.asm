@@ -668,53 +668,28 @@ int main(int argc, char *argv[])
  383:	83 e4 f0             	and    $0xfffffff0,%esp
  386:	57                   	push   %edi
  387:	56                   	push   %esi
+ 388:	53                   	push   %ebx
+ 389:	83 ec 44             	sub    $0x44,%esp
   //        barf("Usage: hackbench [-pipe] <num groups>\n");
 
-  num_groups = 4; // TODO: This may seriously be considered.
+  // NOTE: More than 3 causes error due to num of processes.
+  num_groups = NUM_GROUPS; // TODO: This may seriously be considered.
 
   fdpair(readyfds);
-  fdpair(wakefds);
- 388:	31 f6                	xor    %esi,%esi
-  /* Reap number of children to reap */
-  return num_fds * 2;
-}
-
-int main(int argc, char *argv[])
-{
- 38a:	53                   	push   %ebx
-  //        barf("Usage: hackbench [-pipe] <num groups>\n");
-
-  num_groups = 4; // TODO: This may seriously be considered.
-
-  fdpair(readyfds);
-  fdpair(wakefds);
- 38b:	31 db                	xor    %ebx,%ebx
-  /* Reap number of children to reap */
-  return num_fds * 2;
-}
-
-int main(int argc, char *argv[])
-{
- 38d:	83 ec 44             	sub    $0x44,%esp
-  //if (argc != 2 || (num_groups = atoi(argv[1])) == 0)
-  //        barf("Usage: hackbench [-pipe] <num groups>\n");
-
-  num_groups = 4; // TODO: This may seriously be considered.
-
-  fdpair(readyfds);
- 390:	8d 44 24 34          	lea    0x34(%esp),%eax
+ 38c:	8d 44 24 34          	lea    0x34(%esp),%eax
     use_pipes = 1;
     argc--;
     argv++;
     }
   */
   use_pipes = 1;
- 394:	c7 05 54 0c 00 00 01 	movl   $0x1,0xc54
- 39b:	00 00 00 
-  //if (argc != 2 || (num_groups = atoi(argv[1])) == 0)
+ 390:	c7 05 54 0c 00 00 01 	movl   $0x1,0xc54
+ 397:	00 00 00 
+ 39a:	8d 7c 24 3f          	lea    0x3f(%esp),%edi
   //        barf("Usage: hackbench [-pipe] <num groups>\n");
 
-  num_groups = 4; // TODO: This may seriously be considered.
+  // NOTE: More than 3 causes error due to num of processes.
+  num_groups = NUM_GROUPS; // TODO: This may seriously be considered.
 
   fdpair(readyfds);
  39e:	e8 2d fd ff ff       	call   d0 <fdpair>
@@ -727,35 +702,19 @@ int main(int argc, char *argv[])
     total_children += group(num_fds, readyfds[1], wakefds[0]);
  3ac:	8b 4c 24 2c          	mov    0x2c(%esp),%ecx
  3b0:	b8 08 00 00 00       	mov    $0x8,%eax
-
-  fdpair(readyfds);
-  fdpair(wakefds);
-
-  total_children = 0;
-  for (i = 0; i < num_groups; i++)
- 3b5:	83 c6 01             	add    $0x1,%esi
-    total_children += group(num_fds, readyfds[1], wakefds[0]);
- 3b8:	8b 54 24 38          	mov    0x38(%esp),%edx
- 3bc:	e8 4f fd ff ff       	call   110 <group>
- 3c1:	01 c3                	add    %eax,%ebx
-
-  fdpair(readyfds);
-  fdpair(wakefds);
-
-  total_children = 0;
-  for (i = 0; i < num_groups; i++)
- 3c3:	83 fe 04             	cmp    $0x4,%esi
- 3c6:	75 e4                	jne    3ac <main+0x2c>
-    total_children += group(num_fds, readyfds[1], wakefds[0]);
+ 3b5:	8b 54 24 38          	mov    0x38(%esp),%edx
+ 3b9:	e8 52 fd ff ff       	call   110 <group>
+ 3be:	8b 4c 24 2c          	mov    0x2c(%esp),%ecx
+ 3c2:	8b 54 24 38          	mov    0x38(%esp),%edx
+ 3c6:	89 c3                	mov    %eax,%ebx
+ 3c8:	b8 08 00 00 00       	mov    $0x8,%eax
+ 3cd:	e8 3e fd ff ff       	call   110 <group>
 
   /* Wait for everyone to be ready */
   for (i = 0; i < total_children; i++)
- 3c8:	85 db                	test   %ebx,%ebx
- 3ca:	8d 7c 24 3f          	lea    0x3f(%esp),%edi
- 3ce:	74 36                	je     406 <main+0x86>
- 3d0:	66 31 f6             	xor    %si,%si
- 3d3:	90                   	nop
- 3d4:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+ 3d2:	01 c3                	add    %eax,%ebx
+ 3d4:	74 30                	je     406 <main+0x86>
+ 3d6:	31 f6                	xor    %esi,%esi
     if (read(readyfds[0], &dummy, 1) != 1)
  3d8:	8b 44 24 34          	mov    0x34(%esp),%eax
  3dc:	c7 44 24 08 01 00 00 	movl   $0x1,0x8(%esp)
