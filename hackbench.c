@@ -24,13 +24,19 @@
  */
 
 #define DATASIZE 100
-#define POLLIN 1
+
 #define FREE 0
+#define POLLIN 1
+
 #define SENDER 1
 #define RECEIVER 2
+
 #define STDIN  0
 #define STDOUT 1
 #define STDERR 2
+
+#define TIMEOUT 1
+
 static unsigned int loops = 100;
 static int use_pipes = 1; // Use Pipe mode
 //static int pollfd = 0; // 0: not used, 1: used
@@ -66,6 +72,28 @@ static void fdpair(int fds[2])
   //barf("Creating fdpair");
 }
 
+static void checkEvents(int id, int event, int caller, char *msg){
+  if(event == POLLIN){
+    if(caller == SENDER){
+      printf(STDOUT, "send[%d] is %s ... (pollfd[%d].events = POLLIN)\n", id, msg, id);
+    }else if(caller == RECEIVER){
+      printf(STDOUT, "recv[%d] is %s ... (pollfd[%d].events = POLLIN)\n", id, msg, id);
+    }else{
+      barf("checkEvents");
+    }
+  }else if(event == FREE){
+    if(caller == SENDER){
+      printf(STDOUT, "send[%d] is %s ... (pollfd[%d].events = FREE)\n", id, msg, id);
+    }else if(caller == RECEIVER){
+      printf(STDOUT, "recv[%d] is %s ... (pollfd[%d].events = FREE)\n", id, msg, id);
+    }else{
+      barf("checkEvents");
+    }
+  }else{
+    barf("checkEvents");
+  }	      
+}
+
 /* Block until we're ready to go */
 static void ready(int ready_out, int wakefd, int id, int caller)
 {
@@ -83,9 +111,13 @@ static void ready(int ready_out, int wakefd, int id, int caller)
   //if (poll(&pollfd, 1, -1) != 1)
   //        barf("poll");
   if(caller == SENDER){
-    while(pollfd[id].events == POLLIN);
+    //checkEvents(id, pollfd[id].events, caller, "waiting");
+    //while(pollfd[id].events == POLLIN);
+    checkEvents(id, pollfd[id].events, caller, "ready");
   }else if(caller == RECEIVER){
     pollfd[id].events = FREE;
+    //while(getticks() < TIMEOUT);
+    checkEvents(id, pollfd[id].events, caller, "ready");
   }else{
     barf("Failed being ready.");
   }
@@ -113,11 +145,13 @@ static void sender(unsigned int num_fds,
 
     again:
       ret = write(out_fd[j], data + done, sizeof(data)-done);
+      printf(STDOUT, "send[%d]: ret = %d. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
       if (ret < 0)
 	barf("SENDER: write");
       done += ret;
       if (done < sizeof(data))
 	goto again;
+      printf(STDOUT, "send[%d]'s task has done. (%d/%d/%d)\n", id, ret, i, num_fds, loops);
     }
   }
 }
@@ -135,18 +169,23 @@ static void receiver(unsigned int num_packets,
   ready(ready_out, wakefd, id, RECEIVER);
 
   /* Receive them all */
+  int timeout = 0;
   for (i = 0; i < num_packets; i++) {
     char data[DATASIZE];
     int ret, done = 0;
 
   again:
     ret = read(in_fd, data + done, DATASIZE - done);
-    printf(STDOUT, "ret = %d\n", ret);
+    printf(STDOUT, "recv[%d]: ret = %d. (%d/%d)\n", id, ret, i, num_packets);
     if (ret < 0)
       barf("SERVER: read");
     done += ret;
-    if (done < DATASIZE)
-      goto again;
+    if (done < DATASIZE){
+      timeout++;
+      if(timeout < TIMEOUT)goto again;
+    }
+    printf(STDOUT, "recv[%d]'s task has done. (%d/%d)\n", id, i, num_packets);
+    timeout = 0;
   }
 }
 
@@ -234,6 +273,7 @@ int main(int argc, char *argv[])
 
   //gettimeofday(&start, NULL);
   start = getticks();
+  printf(STDOUT, "Start Watching Time ...\n");
   
 
   /* Kick them off */
@@ -241,6 +281,7 @@ int main(int argc, char *argv[])
     barf("Writing to start them");
 
   /* Reap them all */
+  //TODO: Fix different specifications between xv6 and Linux
   for (i = 0; i < total_children; i++) {
     int status;
     //wait(&status); // TODO: Too Many Arguments???
@@ -251,6 +292,7 @@ int main(int argc, char *argv[])
   }
   
   stop = getticks();
+  printf(STDOUT, "Stop Watching Time ...\n");
   diff = stop - start;
 
   /* Print time... */
