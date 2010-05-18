@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 
   //gettimeofday(&start, NULL);
   start = getticks();
-  printf(STDOUT, "Start Watching Time ...\n");
+  if(DEBUG) printf(STDOUT, "Start Watching Time ...\n");
   
 
   /* Kick them off */
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
   }
   
   stop = getticks();
-  printf(STDOUT, "Stop Watching Time ...\n");
+  if(DEBUG) printf(STDOUT, "Stop Watching Time ...\n");
   diff = stop - start;
 
   /* Print time... */
