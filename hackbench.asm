@@ -5,33 +5,19 @@ _hackbench:     file format elf32-i386
 Disassembly of section .text:
 
 00000000 <barf>:
-  short int events;    /* Types of events poller cares about. */
-  short int revents;   /* Types of events that actually occurred. */
-}pollfd[512];
-
-static void barf(const char *msg)
-{
    0:	55                   	push   %ebp
    1:	89 e5                	mov    %esp,%ebp
    3:	83 ec 18             	sub    $0x18,%esp
-  printf(STDOUT, "(Error: %s)\n", msg);
    6:	89 44 24 08          	mov    %eax,0x8(%esp)
    a:	c7 44 24 04 f0 0a 00 	movl   $0xaf0,0x4(%esp)
   11:	00 
   12:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
   19:	e8 c2 07 00 00       	call   7e0 <printf>
-  exit();
   1e:	e8 55 06 00 00       	call   678 <exit>
   23:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
   29:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 00000030 <ready>:
-  //barf("Creating fdpair");
-}
-
-/* Block until we're ready to go */
-static void ready(int ready_out, int wakefd, int id, int caller)
-{
   30:	55                   	push   %ebp
   31:	89 e5                	mov    %esp,%ebp
   33:	56                   	push   %esi
@@ -39,26 +25,10 @@ static void ready(int ready_out, int wakefd, int id, int caller)
   35:	89 cb                	mov    %ecx,%ebx
   37:	83 ec 20             	sub    $0x20,%esp
   3a:	8b 75 08             	mov    0x8(%ebp),%esi
-  char dummy;
-  // TODO: Implement myPoll function
-  pollfd[id].fd = wakefd;
   3d:	89 14 cd 00 0c 00 00 	mov    %edx,0xc00(,%ecx,8)
-  pollfd[id].events = POLLIN;
-
-  /* Tell them we're ready. */
-  if (write(ready_out, &dummy, 1) != 1)
   44:	8d 55 f7             	lea    -0x9(%ebp),%edx
-static void ready(int ready_out, int wakefd, int id, int caller)
-{
-  char dummy;
-  // TODO: Implement myPoll function
-  pollfd[id].fd = wakefd;
-  pollfd[id].events = POLLIN;
   47:	66 c7 04 cd 04 0c 00 	movw   $0x1,0xc04(,%ecx,8)
   4e:	00 01 00 
-
-  /* Tell them we're ready. */
-  if (write(ready_out, &dummy, 1) != 1)
   51:	c7 44 24 08 01 00 00 	movl   $0x1,0x8(%esp)
   58:	00 
   59:	89 54 24 04          	mov    %edx,0x4(%esp)
@@ -66,60 +36,28 @@ static void ready(int ready_out, int wakefd, int id, int caller)
   60:	e8 33 06 00 00       	call   698 <write>
   65:	83 f8 01             	cmp    $0x1,%eax
   68:	74 0a                	je     74 <ready+0x44>
-    barf("CLIENT: ready write");
   6a:	b8 fd 0a 00 00       	mov    $0xafd,%eax
   6f:	e8 8c ff ff ff       	call   0 <barf>
-
-  /* Wait for "GO" signal */
-  //TODO: Polling should be re-implemented for xv6.
-  //if (poll(&pollfd, 1, -1) != 1)
-  //        barf("poll");
-  if(caller == SENDER){
   74:	83 fe 01             	cmp    $0x1,%esi
   77:	74 2f                	je     a8 <ready+0x78>
-    while(pollfd[id].events == POLLIN);
-  }else if(caller == RECEIVER){
   79:	83 fe 02             	cmp    $0x2,%esi
   7c:	74 12                	je     90 <ready+0x60>
-    pollfd[id].events = FREE;
-  }else{
-    barf("failed being ready.");
   7e:	b8 11 0b 00 00       	mov    $0xb11,%eax
   83:	e8 78 ff ff ff       	call   0 <barf>
-  }
-
-}
   88:	83 c4 20             	add    $0x20,%esp
   8b:	5b                   	pop    %ebx
   8c:	5e                   	pop    %esi
   8d:	5d                   	pop    %ebp
   8e:	c3                   	ret    
   8f:	90                   	nop
-  //if (poll(&pollfd, 1, -1) != 1)
-  //        barf("poll");
-  if(caller == SENDER){
-    while(pollfd[id].events == POLLIN);
-  }else if(caller == RECEIVER){
-    pollfd[id].events = FREE;
   90:	66 c7 04 dd 04 0c 00 	movw   $0x0,0xc04(,%ebx,8)
   97:	00 00 00 
-  }else{
-    barf("failed being ready.");
-  }
-
-}
   9a:	83 c4 20             	add    $0x20,%esp
   9d:	5b                   	pop    %ebx
   9e:	5e                   	pop    %esi
   9f:	5d                   	pop    %ebp
   a0:	c3                   	ret    
   a1:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-  /* Wait for "GO" signal */
-  //TODO: Polling should be re-implemented for xv6.
-  //if (poll(&pollfd, 1, -1) != 1)
-  //        barf("poll");
-  if(caller == SENDER){
-    while(pollfd[id].events == POLLIN);
   a8:	66 83 3c dd 04 0c 00 	cmpw   $0x1,0xc04(,%ebx,8)
   af:	00 01 
   b1:	75 d5                	jne    88 <ready+0x58>
@@ -128,61 +66,24 @@ static void ready(int ready_out, int wakefd, int id, int caller)
   b9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 000000c0 <fdpair>:
-  printf(STDOUT, "(Error: %s)\n", msg);
-  exit();
-}
-
-static void fdpair(int fds[2])
-{
   c0:	55                   	push   %ebp
   c1:	89 e5                	mov    %esp,%ebp
   c3:	83 ec 18             	sub    $0x18,%esp
-  if (use_pipes) {
   c6:	8b 15 cc 0b 00 00    	mov    0xbcc,%edx
   cc:	85 d2                	test   %edx,%edx
   ce:	75 10                	jne    e0 <fdpair+0x20>
-    //if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0)
-    //  return;
-    barf("Socket mode is running. (error)\n");
-  }
-  //barf("Creating fdpair");
-}
   d0:	c9                   	leave  
-      return;
-  } else {
-    // This mode would not run correctly in xv6
-    //if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0)
-    //  return;
-    barf("Socket mode is running. (error)\n");
   d1:	b8 90 0b 00 00       	mov    $0xb90,%eax
   d6:	e9 25 ff ff ff       	jmp    0 <barf>
   db:	90                   	nop
   dc:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
-static void fdpair(int fds[2])
-{
-  if (use_pipes) {
-    // TODO: Implement myPipe
-    //    pipe(fds[0], fds[1]);
-    if (pipe(fds) == 0)
   e0:	89 04 24             	mov    %eax,(%esp)
   e3:	e8 a0 05 00 00       	call   688 <pipe>
-    //if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0)
-    //  return;
-    barf("Socket mode is running. (error)\n");
-  }
-  //barf("Creating fdpair");
-}
   e8:	c9                   	leave  
   e9:	c3                   	ret    
   ea:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 000000f0 <group>:
-
-/* One group of senders and receivers */
-static unsigned int group(unsigned int num_fds,
-                          int ready_out,
-                          int wakefd)
-{
   f0:	55                   	push   %ebp
   f1:	89 e5                	mov    %esp,%ebp
   f3:	57                   	push   %edi
@@ -190,206 +91,69 @@ static unsigned int group(unsigned int num_fds,
   f5:	53                   	push   %ebx
   f6:	81 ec ac 00 00 00    	sub    $0xac,%esp
   fc:	89 85 70 ff ff ff    	mov    %eax,-0x90(%ebp)
-  unsigned int i;
-  unsigned int out_fds[num_fds];
  102:	8d 04 85 1e 00 00 00 	lea    0x1e(,%eax,4),%eax
-
-  for (i = 0; i < num_fds; i++) {
  109:	8b b5 70 ff ff ff    	mov    -0x90(%ebp),%esi
-static unsigned int group(unsigned int num_fds,
-                          int ready_out,
-                          int wakefd)
-{
-  unsigned int i;
-  unsigned int out_fds[num_fds];
  10f:	83 e0 f0             	and    $0xfffffff0,%eax
  112:	29 c4                	sub    %eax,%esp
  114:	8d 5c 24 1b          	lea    0x1b(%esp),%ebx
  118:	83 e3 f0             	and    $0xfffffff0,%ebx
-
-  for (i = 0; i < num_fds; i++) {
  11b:	85 f6                	test   %esi,%esi
-
-/* One group of senders and receivers */
-static unsigned int group(unsigned int num_fds,
-                          int ready_out,
-                          int wakefd)
-{
  11d:	89 95 68 ff ff ff    	mov    %edx,-0x98(%ebp)
  123:	89 8d 64 ff ff ff    	mov    %ecx,-0x9c(%ebp)
-  unsigned int i;
-  unsigned int out_fds[num_fds];
-
-  for (i = 0; i < num_fds; i++) {
  129:	74 36                	je     161 <group+0x71>
  12b:	31 f6                	xor    %esi,%esi
  12d:	8d 7d e0             	lea    -0x20(%ebp),%edi
-    int fds[2];
-
-    /* Create the pipe between client and server */
-    fdpair(fds);
  130:	89 f8                	mov    %edi,%eax
  132:	e8 89 ff ff ff       	call   c0 <fdpair>
-
-    /* Fork the receiver. */
-    switch (fork()) {
  137:	e8 34 05 00 00       	call   670 <fork>
  13c:	83 f8 ff             	cmp    $0xffffffff,%eax
  13f:	74 4f                	je     190 <group+0xa0>
  141:	85 c0                	test   %eax,%eax
  143:	74 55                	je     19a <group+0xaa>
-      close(fds[1]);
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
-      exit();
-    }
-
-    out_fds[i] = fds[1];
  145:	8b 45 e4             	mov    -0x1c(%ebp),%eax
  148:	89 04 b3             	mov    %eax,(%ebx,%esi,4)
-    close(fds[0]);
  14b:	8b 45 e0             	mov    -0x20(%ebp),%eax
-                          int wakefd)
-{
-  unsigned int i;
-  unsigned int out_fds[num_fds];
-
-  for (i = 0; i < num_fds; i++) {
  14e:	83 c6 01             	add    $0x1,%esi
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
-      exit();
-    }
-
-    out_fds[i] = fds[1];
-    close(fds[0]);
  151:	89 04 24             	mov    %eax,(%esp)
  154:	e8 47 05 00 00       	call   6a0 <close>
-                          int wakefd)
-{
-  unsigned int i;
-  unsigned int out_fds[num_fds];
-
-  for (i = 0; i < num_fds; i++) {
  159:	39 b5 70 ff ff ff    	cmp    %esi,-0x90(%ebp)
  15f:	77 cf                	ja     130 <group+0x40>
  161:	31 f6                	xor    %esi,%esi
-    out_fds[i] = fds[1];
-    close(fds[0]);
-  }
-
-  /* Now we have all the fds, fork the senders */
-  for (i = 0; i < num_fds; i++) {
  163:	3b b5 70 ff ff ff    	cmp    -0x90(%ebp),%esi
  169:	0f 83 ad 01 00 00    	jae    31c <group+0x22c>
-    switch (fork()) {
  16f:	e8 fc 04 00 00       	call   670 <fork>
  174:	83 f8 ff             	cmp    $0xffffffff,%eax
  177:	0f 84 ef 00 00 00    	je     26c <group+0x17c>
  17d:	85 c0                	test   %eax,%eax
  17f:	90                   	nop
  180:	0f 84 f0 00 00 00    	je     276 <group+0x186>
-    out_fds[i] = fds[1];
-    close(fds[0]);
-  }
-
-  /* Now we have all the fds, fork the senders */
-  for (i = 0; i < num_fds; i++) {
  186:	83 c6 01             	add    $0x1,%esi
  189:	eb d8                	jmp    163 <group+0x73>
  18b:	90                   	nop
  18c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
-    /* Create the pipe between client and server */
-    fdpair(fds);
-
-    /* Fork the receiver. */
-    switch (fork()) {
-    case -1: barf("fork()");
  190:	b8 25 0b 00 00       	mov    $0xb25,%eax
  195:	e8 66 fe ff ff       	call   0 <barf>
-    case 0:
-      close(fds[1]);
  19a:	8b 45 e4             	mov    -0x1c(%ebp),%eax
  19d:	89 04 24             	mov    %eax,(%esp)
  1a0:	e8 fb 04 00 00       	call   6a0 <close>
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
  1a5:	8b 45 e0             	mov    -0x20(%ebp),%eax
-		     int id)
-{
-  unsigned int i;
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
  1a8:	89 f1                	mov    %esi,%ecx
-    /* Fork the receiver. */
-    switch (fork()) {
-    case -1: barf("fork()");
-    case 0:
-      close(fds[1]);
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
  1aa:	6b 95 70 ff ff ff 64 	imul   $0x64,-0x90(%ebp),%edx
-		     int id)
-{
-  unsigned int i;
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
  1b1:	c7 04 24 02 00 00 00 	movl   $0x2,(%esp)
-    /* Fork the receiver. */
-    switch (fork()) {
-    case -1: barf("fork()");
-    case 0:
-      close(fds[1]);
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
  1b8:	89 85 74 ff ff ff    	mov    %eax,-0x8c(%ebp)
-		     int id)
-{
-  unsigned int i;
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
  1be:	8b 85 68 ff ff ff    	mov    -0x98(%ebp),%eax
-    /* Fork the receiver. */
-    switch (fork()) {
-    case -1: barf("fork()");
-    case 0:
-      close(fds[1]);
-      receiver(num_fds*loops, fds[0], ready_out, wakefd, i);
  1c4:	89 95 6c ff ff ff    	mov    %edx,-0x94(%ebp)
-		     int id)
-{
-  unsigned int i;
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
  1ca:	8b 95 64 ff ff ff    	mov    -0x9c(%ebp),%edx
  1d0:	e8 5b fe ff ff       	call   30 <ready>
-
-  /* Receive them all */
-  for (i = 0; i < num_packets; i++) {
  1d5:	8b 9d 6c ff ff ff    	mov    -0x94(%ebp),%ebx
  1db:	85 db                	test   %ebx,%ebx
  1dd:	74 75                	je     254 <group+0x164>
  1df:	c7 85 70 ff ff ff 00 	movl   $0x0,-0x90(%ebp)
  1e6:	00 00 00 
-    char data[DATASIZE];
-    int ret, done = 0;
-
-  again:
-    ret = read(in_fd, data + done, DATASIZE - done);
  1e9:	bf 64 00 00 00       	mov    $0x64,%edi
  1ee:	66 90                	xchg   %ax,%ax
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
-
-  /* Receive them all */
-  for (i = 0; i < num_packets; i++) {
  1f0:	31 db                	xor    %ebx,%ebx
  1f2:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
-    char data[DATASIZE];
-    int ret, done = 0;
-
-  again:
-    ret = read(in_fd, data + done, DATASIZE - done);
  1f8:	89 f8                	mov    %edi,%eax
  1fa:	29 d8                	sub    %ebx,%eax
  1fc:	89 44 24 08          	mov    %eax,0x8(%esp)
@@ -399,70 +163,28 @@ static unsigned int group(unsigned int num_fds,
  20c:	8b 85 74 ff ff ff    	mov    -0x8c(%ebp),%eax
  212:	89 04 24             	mov    %eax,(%esp)
  215:	e8 76 04 00 00       	call   690 <read>
-    printf(STDOUT, "ret = %d\n", ret);
  21a:	c7 44 24 04 2c 0b 00 	movl   $0xb2c,0x4(%esp)
  221:	00 
  222:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
-  for (i = 0; i < num_packets; i++) {
-    char data[DATASIZE];
-    int ret, done = 0;
-
-  again:
-    ret = read(in_fd, data + done, DATASIZE - done);
  229:	89 c6                	mov    %eax,%esi
-    printf(STDOUT, "ret = %d\n", ret);
  22b:	89 44 24 08          	mov    %eax,0x8(%esp)
  22f:	e8 ac 05 00 00       	call   7e0 <printf>
-    if (ret < 0)
  234:	85 f6                	test   %esi,%esi
  236:	78 28                	js     260 <group+0x170>
-      barf("SERVER: read");
-    done += ret;
  238:	01 f3                	add    %esi,%ebx
-    if (done < DATASIZE)
  23a:	83 fb 63             	cmp    $0x63,%ebx
  23d:	7e b9                	jle    1f8 <group+0x108>
-
-  /* Wait for start... */
-  ready(ready_out, wakefd, id, RECEIVER);
-
-  /* Receive them all */
-  for (i = 0; i < num_packets; i++) {
  23f:	83 85 70 ff ff ff 01 	addl   $0x1,-0x90(%ebp)
  246:	8b 95 70 ff ff ff    	mov    -0x90(%ebp),%edx
  24c:	39 95 6c ff ff ff    	cmp    %edx,-0x94(%ebp)
  252:	77 9c                	ja     1f0 <group+0x100>
-  for (i = 0; i < num_fds; i++) {
-    switch (fork()) {
-    case -1: barf("fork()");
-    case 0:
-      sender(num_fds, out_fds, ready_out, wakefd, i);
-      exit();
  254:	e8 1f 04 00 00       	call   678 <exit>
  259:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
-
-  again:
-    ret = read(in_fd, data + done, DATASIZE - done);
-    printf(STDOUT, "ret = %d\n", ret);
-    if (ret < 0)
-      barf("SERVER: read");
  260:	b8 36 0b 00 00       	mov    $0xb36,%eax
  265:	e8 96 fd ff ff       	call   0 <barf>
  26a:	eb cc                	jmp    238 <group+0x148>
-  }
-
-  /* Now we have all the fds, fork the senders */
-  for (i = 0; i < num_fds; i++) {
-    switch (fork()) {
-    case -1: barf("fork()");
  26c:	b8 25 0b 00 00       	mov    $0xb25,%eax
  271:	e8 8a fd ff ff       	call   0 <barf>
-{
-  char data[DATASIZE];
-  unsigned int i, j;
-
-  //TODO: Fix Me?
-  ready(ready_out, wakefd, id, SENDER);
  276:	8b 95 64 ff ff ff    	mov    -0x9c(%ebp),%edx
  27c:	89 f1                	mov    %esi,%ecx
  27e:	8b 85 68 ff ff ff    	mov    -0x98(%ebp),%eax
@@ -471,39 +193,13 @@ static unsigned int group(unsigned int num_fds,
  290:	c7 85 6c ff ff ff 00 	movl   $0x0,-0x94(%ebp)
  297:	00 00 00 
  29a:	89 9d 74 ff ff ff    	mov    %ebx,-0x8c(%ebp)
-
-  /* Now pump to every receiver. */
-  for (i = 0; i < loops; i++) {
-    for (j = 0; j < num_fds; j++) {
  2a0:	8b 8d 70 ff ff ff    	mov    -0x90(%ebp),%ecx
-{
-  char data[DATASIZE];
-  unsigned int i, j;
-
-  //TODO: Fix Me?
-  ready(ready_out, wakefd, id, SENDER);
  2a6:	31 db                	xor    %ebx,%ebx
-
-  /* Now pump to every receiver. */
-  for (i = 0; i < loops; i++) {
-    for (j = 0; j < num_fds; j++) {
  2a8:	85 c9                	test   %ecx,%ecx
  2aa:	74 4c                	je     2f8 <group+0x208>
  2ac:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
-{
-  char data[DATASIZE];
-  unsigned int i, j;
-
-  //TODO: Fix Me?
-  ready(ready_out, wakefd, id, SENDER);
  2b0:	31 f6                	xor    %esi,%esi
  2b2:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
-  for (i = 0; i < loops; i++) {
-    for (j = 0; j < num_fds; j++) {
-      int ret, done = 0;
-
-    again:
-      ret = write(out_fd[j], data + done, sizeof(data)-done);
  2b8:	8b 95 74 ff ff ff    	mov    -0x8c(%ebp),%edx
  2be:	b8 64 00 00 00       	mov    $0x64,%eax
  2c3:	29 f0                	sub    %esi,%eax
@@ -514,116 +210,43 @@ static unsigned int group(unsigned int num_fds,
  2d5:	8b 04 9a             	mov    (%edx,%ebx,4),%eax
  2d8:	89 04 24             	mov    %eax,(%esp)
  2db:	e8 b8 03 00 00       	call   698 <write>
-      if (ret < 0)
  2e0:	85 c0                	test   %eax,%eax
-  for (i = 0; i < loops; i++) {
-    for (j = 0; j < num_fds; j++) {
-      int ret, done = 0;
-
-    again:
-      ret = write(out_fd[j], data + done, sizeof(data)-done);
  2e2:	89 c7                	mov    %eax,%edi
-      if (ret < 0)
  2e4:	78 2a                	js     310 <group+0x220>
-	barf("SENDER: write");
-      done += ret;
  2e6:	01 fe                	add    %edi,%esi
-      if (done < sizeof(data))
  2e8:	83 fe 63             	cmp    $0x63,%esi
  2eb:	76 cb                	jbe    2b8 <group+0x1c8>
-  //TODO: Fix Me?
-  ready(ready_out, wakefd, id, SENDER);
-
-  /* Now pump to every receiver. */
-  for (i = 0; i < loops; i++) {
-    for (j = 0; j < num_fds; j++) {
  2ed:	83 c3 01             	add    $0x1,%ebx
  2f0:	39 9d 70 ff ff ff    	cmp    %ebx,-0x90(%ebp)
  2f6:	77 b8                	ja     2b0 <group+0x1c0>
-
-  //TODO: Fix Me?
-  ready(ready_out, wakefd, id, SENDER);
-
-  /* Now pump to every receiver. */
-  for (i = 0; i < loops; i++) {
  2f8:	83 85 6c ff ff ff 01 	addl   $0x1,-0x94(%ebp)
  2ff:	83 bd 6c ff ff ff 64 	cmpl   $0x64,-0x94(%ebp)
  306:	75 98                	jne    2a0 <group+0x1b0>
  308:	e9 47 ff ff ff       	jmp    254 <group+0x164>
  30d:	8d 76 00             	lea    0x0(%esi),%esi
-      int ret, done = 0;
-
-    again:
-      ret = write(out_fd[j], data + done, sizeof(data)-done);
-      if (ret < 0)
-	barf("SENDER: write");
  310:	b8 43 0b 00 00       	mov    $0xb43,%eax
  315:	e8 e6 fc ff ff       	call   0 <barf>
  31a:	eb ca                	jmp    2e6 <group+0x1f6>
-    out_fds[i] = fds[1];
-    close(fds[0]);
-  }
-
-  /* Now we have all the fds, fork the senders */
-  for (i = 0; i < num_fds; i++) {
  31c:	31 f6                	xor    %esi,%esi
  31e:	eb 0e                	jmp    32e <group+0x23e>
-    }
-  }
-
-  /* Close the fds we have left */
-  for (i = 0; i < num_fds; i++)
-    close(out_fds[i]);
  320:	8b 04 b3             	mov    (%ebx,%esi,4),%eax
-      exit();
-    }
-  }
-
-  /* Close the fds we have left */
-  for (i = 0; i < num_fds; i++)
  323:	83 c6 01             	add    $0x1,%esi
-    close(out_fds[i]);
  326:	89 04 24             	mov    %eax,(%esp)
  329:	e8 72 03 00 00       	call   6a0 <close>
-      exit();
-    }
-  }
-
-  /* Close the fds we have left */
-  for (i = 0; i < num_fds; i++)
  32e:	3b b5 70 ff ff ff    	cmp    -0x90(%ebp),%esi
  334:	72 ea                	jb     320 <group+0x230>
  336:	8b 85 70 ff ff ff    	mov    -0x90(%ebp),%eax
-    close(out_fds[i]);
-
-  /* Return number of children to reap */
-  return num_fds * 2;
-}
  33c:	8d 65 f4             	lea    -0xc(%ebp),%esp
  33f:	5b                   	pop    %ebx
  340:	5e                   	pop    %esi
  341:	5f                   	pop    %edi
-      exit();
-    }
-  }
-
-  /* Close the fds we have left */
-  for (i = 0; i < num_fds; i++)
  342:	01 c0                	add    %eax,%eax
-    close(out_fds[i]);
-
-  /* Return number of children to reap */
-  return num_fds * 2;
-}
  344:	5d                   	pop    %ebp
  345:	c3                   	ret    
  346:	8d 76 00             	lea    0x0(%esi),%esi
  349:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 00000350 <main>:
-
-int main(int argc, char *argv[])
-{
  350:	55                   	push   %ebp
  351:	89 e5                	mov    %esp,%ebp
  353:	83 e4 f0             	and    $0xfffffff0,%esp
@@ -631,58 +254,22 @@ int main(int argc, char *argv[])
  357:	56                   	push   %esi
  358:	53                   	push   %ebx
  359:	83 ec 44             	sub    $0x44,%esp
-  //if (argc != 2 || (num_groups = atoi(argv[1])) == 0)
-  //        barf("Usage: hackbench [-pipe] <num groups>\n");
-
-  num_groups = 1; // TODO: This may seriously be considered.
-
-  fdpair(readyfds);
  35c:	8d 44 24 34          	lea    0x34(%esp),%eax
-    use_pipes = 1;
-    argc--;
-    argv++;
-    }
-  */
-  use_pipes = 1;
  360:	c7 05 cc 0b 00 00 01 	movl   $0x1,0xbcc
  367:	00 00 00 
  36a:	8d 7c 24 3f          	lea    0x3f(%esp),%edi
-  //if (argc != 2 || (num_groups = atoi(argv[1])) == 0)
-  //        barf("Usage: hackbench [-pipe] <num groups>\n");
-
-  num_groups = 1; // TODO: This may seriously be considered.
-
-  fdpair(readyfds);
  36e:	e8 4d fd ff ff       	call   c0 <fdpair>
-  fdpair(wakefds);
  373:	8d 44 24 2c          	lea    0x2c(%esp),%eax
  377:	e8 44 fd ff ff       	call   c0 <fdpair>
-
-  total_children = 0;
-  for (i = 0; i < num_groups; i++)
-    total_children += group(num_fds, readyfds[1], wakefds[0]);
  37c:	8b 4c 24 2c          	mov    0x2c(%esp),%ecx
  380:	b8 14 00 00 00       	mov    $0x14,%eax
  385:	8b 54 24 38          	mov    0x38(%esp),%edx
  389:	e8 62 fd ff ff       	call   f0 <group>
-
-  /* Wait for everyone to be ready */
-  for (i = 0; i < total_children; i++)
  38e:	85 c0                	test   %eax,%eax
-  fdpair(readyfds);
-  fdpair(wakefds);
-
-  total_children = 0;
-  for (i = 0; i < num_groups; i++)
-    total_children += group(num_fds, readyfds[1], wakefds[0]);
  390:	89 c6                	mov    %eax,%esi
-
-  /* Wait for everyone to be ready */
-  for (i = 0; i < total_children; i++)
  392:	74 32                	je     3c6 <main+0x76>
  394:	31 db                	xor    %ebx,%ebx
  396:	66 90                	xchg   %ax,%ax
-    if (read(readyfds[0], &dummy, 1) != 1)
  398:	8b 44 24 34          	mov    0x34(%esp),%eax
  39c:	c7 44 24 08 01 00 00 	movl   $0x1,0x8(%esp)
  3a3:	00 
@@ -691,88 +278,38 @@ int main(int argc, char *argv[])
  3ab:	e8 e0 02 00 00       	call   690 <read>
  3b0:	83 f8 01             	cmp    $0x1,%eax
  3b3:	74 0a                	je     3bf <main+0x6f>
-      barf("Reading for readyfds");
  3b5:	b8 51 0b 00 00       	mov    $0xb51,%eax
  3ba:	e8 41 fc ff ff       	call   0 <barf>
-  total_children = 0;
-  for (i = 0; i < num_groups; i++)
-    total_children += group(num_fds, readyfds[1], wakefds[0]);
-
-  /* Wait for everyone to be ready */
-  for (i = 0; i < total_children; i++)
  3bf:	83 c3 01             	add    $0x1,%ebx
  3c2:	39 de                	cmp    %ebx,%esi
  3c4:	77 d2                	ja     398 <main+0x48>
-    if (read(readyfds[0], &dummy, 1) != 1)
-      barf("Reading for readyfds");
-
-  //gettimeofday(&start, NULL);
-  start = getticks();
  3c6:	e8 45 03 00 00       	call   710 <getticks>
-  
-
-  /* Kick them off */
-  if (write(wakefds[1], &dummy, 1) != 1)
  3cb:	c7 44 24 08 01 00 00 	movl   $0x1,0x8(%esp)
  3d2:	00 
  3d3:	89 7c 24 04          	mov    %edi,0x4(%esp)
-  for (i = 0; i < total_children; i++)
-    if (read(readyfds[0], &dummy, 1) != 1)
-      barf("Reading for readyfds");
-
-  //gettimeofday(&start, NULL);
-  start = getticks();
  3d7:	89 44 24 1c          	mov    %eax,0x1c(%esp)
-  
-
-  /* Kick them off */
-  if (write(wakefds[1], &dummy, 1) != 1)
  3db:	8b 44 24 30          	mov    0x30(%esp),%eax
  3df:	89 04 24             	mov    %eax,(%esp)
  3e2:	e8 b1 02 00 00       	call   698 <write>
  3e7:	83 f8 01             	cmp    $0x1,%eax
  3ea:	74 0a                	je     3f6 <main+0xa6>
-    barf("Writing to start them");
  3ec:	b8 66 0b 00 00       	mov    $0xb66,%eax
  3f1:	e8 0a fc ff ff       	call   0 <barf>
-
-  /* Reap them all */
-  for (i = 0; i < total_children; i++) {
  3f6:	85 f6                	test   %esi,%esi
  3f8:	74 12                	je     40c <main+0xbc>
  3fa:	31 db                	xor    %ebx,%ebx
  3fc:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
  400:	83 c3 01             	add    $0x1,%ebx
-    int status;
-    //wait(&status); // TODO: Too Many Arguments???
-    wait();
  403:	e8 78 02 00 00       	call   680 <wait>
-  /* Kick them off */
-  if (write(wakefds[1], &dummy, 1) != 1)
-    barf("Writing to start them");
-
-  /* Reap them all */
-  for (i = 0; i < total_children; i++) {
  408:	39 de                	cmp    %ebx,%esi
  40a:	77 f4                	ja     400 <main+0xb0>
-    // TODO: What's WIFEXITED ???
-    //if (!WIFEXITED(status))
-    //  exit();
-  }
-  
-  stop = getticks();
  40c:	e8 ff 02 00 00       	call   710 <getticks>
-  diff = stop - start;
-
-  /* Print time... */
-  printf(STDOUT, "Time: %d [ticks]\n", diff);
  411:	c7 44 24 04 7c 0b 00 	movl   $0xb7c,0x4(%esp)
  418:	00 
  419:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
  420:	2b 44 24 1c          	sub    0x1c(%esp),%eax
  424:	89 44 24 08          	mov    %eax,0x8(%esp)
  428:	e8 b3 03 00 00       	call   7e0 <printf>
-  exit();
  42d:	e8 46 02 00 00       	call   678 <exit>
  432:	90                   	nop
  433:	90                   	nop
