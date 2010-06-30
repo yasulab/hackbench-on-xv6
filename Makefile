@@ -27,10 +27,10 @@ OBJS = \
 	vectors.o\
 
 # Cross-compiling (e.g., on Mac OS X)
-# TOOLPREFIX = i386-jos-elf-
+ TOOLPREFIX = i386-jos-elf-
 
 # Using native tools (e.g., on X86 Linux)
-TOOLPREFIX = 
+#TOOLPREFIX = 
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
@@ -100,7 +100,6 @@ UPROGS=\
 	_echo\
 	_forktest\
 	_grep\
-	_hackbench\
 	_init\
 	_kill\
 	_ln\
@@ -108,10 +107,10 @@ UPROGS=\
 	_mkdir\
 	_rm\
 	_sh\
-	_testticks\
 	_usertests\
 	_wc\
 	_zombie\
+	_hackbench\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -140,5 +139,5 @@ bochs : fs.img xv6.img
 	bochs -q
 
 qemu: fs.img xv6.img
-	qemu -parallel stdio -hdb fs.img xv6.img
+	/Users/yohei/xv6/qemu-0.10.6-6828/i386-softmmu/qemu -parallel stdio -hdb fs.img xv6.img -L /Users/yohei/xv6/qemu-0.10.6-6828/pc-bios/
 
